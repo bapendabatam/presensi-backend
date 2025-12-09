@@ -1,0 +1,35 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "presensi-backend",
+	"main": "src/index.js",
+	"compatibility_date": "2025-11-13",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"durable_objects": {
+		"bindings": [
+			{
+				"class_name": "Presensi",
+				"name": "PRESENSI"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"new_sqlite_classes": [
+				"Presensi"
+			],
+			"tag": "v1"
+		}
+	],
+	"observability": {
+		"enabled": true
+	},
+	"d1_databases": [
+		{
+			"binding": "DB_PRESENSI",
+			"database_name": "db_presensi",
+			"database_id": "58524262-8b25-4e32-b0ce-b2c2ed720939"
+		}
+	]
+}
