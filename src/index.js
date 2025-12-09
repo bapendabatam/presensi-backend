@@ -6,8 +6,9 @@ import { verifyPassword, signJWT, verifyToken } from './utils/auth.js';
 
 export { Presensi };
 
-const ORIGIN_FRONTEND = 'https://192.168.0.20:8788';
+//const ORIGIN_FRONTEND = 'https://192.168.0.20:8788';
 //const ORIGIN_FRONTEND = 'https://192.168.101.72:8788';
+const ORIGIN_FRONTEND = 'https://presensi-frontend.bapendabatam.workers.dev';
 
 const CORS_HEADERS = {
 	'Access-Control-Allow-Origin': ORIGIN_FRONTEND,
