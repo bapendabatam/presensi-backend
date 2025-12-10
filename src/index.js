@@ -107,8 +107,9 @@ export default {
 		// === MIDDLEWARE AUTHENTICATION DAN REDIRECT ===
 		const currentPathname = url.pathname;
 		const LOGIN_PAGE = '/admin/login';
+		const isApiRequest = currentPathname.startsWith('/');
 		
-		if (isRequestingAdminPage(currentPathname)) {
+		if (!isApiRequest && isRequestingAdminPage(currentPathname)) {
 			// Coba otentikasi tanpa mengembalikan 401 response, hanya mendapatkan payload/null
 			let token = request.headers.get('Authorization')?.replace('Bearer ', '');
 			const cookieHeader = request.headers.get('Cookie');
