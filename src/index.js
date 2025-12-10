@@ -6,22 +6,11 @@ import { verifyPassword, signJWT, verifyToken } from './utils/auth.js';
 
 export { Presensi };
 
-//const ORIGIN_FRONTEND = 'https://192.168.0.20:8788';
-//const ORIGIN_FRONTEND = 'https://192.168.101.72:8788';
-const ORIGIN_FRONTEND = 'https://presensi-acara-bapendabatam.pages.dev';
-
-const CORS_HEADERS = {
-	'Access-Control-Allow-Origin': ORIGIN_FRONTEND,
-	'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-	'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-	'Access-Control-Allow-Credentials': 'true',
-};
-
 // Fungsi helper untuk membuat Response JSON dengan Header CORS
-function buildResponse(data, status = 200, extraHeaders = {}, contentType = 'application/json') {
+function buildResponse(data, status = 200, corsHeaders, extraHeaders = {}, contentType = 'application/json') {
 	const headers = {
 		'Content-Type': contentType,
-		...CORS_HEADERS,
+		...corsHeaders,
 		...extraHeaders,
 	};
 	return new Response(JSON.stringify(data), { status, headers });
@@ -35,11 +24,8 @@ const ADMIN_PAGES = [
 ];
 
 function isRequestingAdminPage(pathname) {
-	console.log("isRequestingAdminPage is called");
 	let cleanPath = pathname.endsWith('.html') ? pathname.substring(0, pathname.length - 5) : pathname;
 	cleanPath = cleanPath.replace(/\/$/, '');
-	
-	console.log(ADMIN_PAGES.includes(cleanPath));
 	return ADMIN_PAGES.includes(cleanPath);
 }
 
@@ -47,6 +33,17 @@ export default {
 	async fetch(request, env) {
 		const url = new URL(request.url);
 		const idAcara = url.searchParams.get('acara');
+
+		const ORIGIN_FRONTEND = env.IS_LOCAL_DEV === 'true'
+			? env.ORIGIN_FRONTEND_DEV
+			: env.ORIGIN_FRONTEND_PROD;
+		
+		const CORS_HEADERS = {
+			'Access-Control-Allow-Origin': ORIGIN_FRONTEND,
+			'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+			'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+			'Access-Control-Allow-Credentials': 'true',
+		};
 
 		// Helper utk memverifikasi token dan mengembalikan response 401
 		async function authenticateRequest(request, env) {
@@ -66,7 +63,7 @@ export default {
 			}
 			
 			if (!token) {
-				return buildResponse({ error: "Unauthorized access. Missing authentication token." }, 401);
+				return buildResponse({ error: "Unauthorized access. Missing authentication token." }, 401, CORS_HEADERS);
 			}
 			
 			// Verifikasi token
@@ -75,7 +72,7 @@ export default {
 			const ALLOWED_API_ROLES = ['admin', 'super'];
 			
 			if (!payload || !ALLOWED_API_ROLES.includes(payload.role)) {
-				return buildResponse({ error: "Unauthorized access. Invalid or missing admin token." }, 401);
+				return buildResponse({ error: "Unauthorized access. Invalid or missing admin token." }, 401, CORS_HEADERS);
 			}
 			return payload; // Mengembalikan payload jika sukses
 		}
@@ -112,7 +109,6 @@ export default {
 		const LOGIN_PAGE = '/admin/login';
 		
 		if (isRequestingAdminPage(currentPathname)) {
-			console.log('HELLO');
 			// Coba otentikasi tanpa mengembalikan 401 response, hanya mendapatkan payload/null
 			let token = request.headers.get('Authorization')?.replace('Bearer ', '');
 			const cookieHeader = request.headers.get('Cookie');
@@ -176,7 +172,7 @@ export default {
 			if (!token) {
 				// Token tidak ditemukan di Cookie
 				console.log("VERIFY SESSION: Token tidak ditemukan di cookie.");
-				return buildResponse({ error: "No session token found." }, 401);
+				return buildResponse({ error: "No session token found." }, 401, CORS_HEADERS);
 			}
 
 			// Memverifikasi token
@@ -187,7 +183,7 @@ export default {
 			if (!payload || !ALLOWED_ROLES.includes(payload.role)) {
 				// Token tidak valid (expired atau signature salah) atau role tidak diizinkan
 				console.log(`VERIFY SESSION: Token tidak valid/expired. Role: ${payload?.role}`);
-				return buildResponse({ error: "Invalid or expired session." }, 401);
+				return buildResponse({ error: "Invalid or expired session." }, 401, CORS_HEADERS);
 			}
 			
 			// Jika valid, kembalikan 200 OK beserta payload user
@@ -197,7 +193,7 @@ export default {
 					username: payload.username,
 					role: payload.role
 				}
-			}, 200);
+			}, 200, CORS_HEADERS);
 		}
 		
 		// ===
@@ -209,21 +205,21 @@ export default {
 				const { username, password, redirect } = await request.json();
 				
 				if (!username || !password) {
-					return buildResponse({ error: "Username dan Password wajib diisi." }, 400);
+					return buildResponse({ error: "Username dan Password wajib diisi." }, 400, CORS_HEADERS);
 				}
 				
 				const admin = await db.getAdminByUsername(env.DB_PRESENSI, username);
 				
 				if (!admin) {
 					// Return error generik untuk keamanan
-					return buildResponse({ error: "Username atau Password salah." }, 401);
+					return buildResponse({ error: "Username atau Password salah." }, 401, CORS_HEADERS);
 				}
 				
 				const isValid = await verifyPassword(admin.password_hash, password);
 				
 				// Verifikasi Password
 				if (!isValid) {
-					return buildResponse({ error: "Username atau Password salah." }, 401);
+					return buildResponse({ error: "Username atau Password salah." }, 401, CORS_HEADERS);
 				}
 				
 				// Buat Token JWT
@@ -259,7 +255,7 @@ export default {
 				}), { status: 200, headers });
 			} catch (e) {
 				console.error("Login error:", e);
-				return buildResponse({ error: "Terjadi Kesalahan sistem." }, 500);
+				return buildResponse({ error: "Terjadi Kesalahan sistem." }, 500, CORS_HEADERS);
 			}
 		}
 		
@@ -281,7 +277,7 @@ export default {
 				}), { status: 200, headers });
 			} catch (e) {
 				console.error("Logout error:", e);
-				return buildResponse({ error: "Terjadi kesalahan sistem saat logout." }, 500);
+				return buildResponse({ error: "Terjadi kesalahan sistem saat logout." }, 500, CORS_HEADERS);
 			}
 		}
 		
@@ -351,17 +347,17 @@ export default {
 			// --- END VERIFIKASI TOKEN
 			
 			if (!idAcara) {
-				return buildResponse({ error: "Parameter acara wajib disertakan." }, 400);
+				return buildResponse({ error: "Parameter acara wajib disertakan." }, 400, CORS_HEADERS);
 			}
 			
 			const acaraDetails = await db.getAcara(env.DB_PRESENSI, idAcara);
 			if (!acaraDetails) {
-				return buildResponse({ error: "Acara tidak ditemukan." }, 404);
+				return buildResponse({ error: "Acara tidak ditemukan." }, 404, CORS_HEADERS);
 			}
 			
 			const dataPresensi = await db.getDataPresensi(env.DB_PRESENSI, idAcara);
 			// SERTAKAN CORS HEADER PADA RESPON SUKSES
-			return buildResponse(dataPresensi);
+			return buildResponse(dataPresensi, 200, CORS_HEADERS);
 		}
 		
 		// admin/data-undangan
@@ -374,17 +370,17 @@ export default {
 			// --- END VERIFIKASI TOKEN
 			
 			if (!idAcara) {
-				return buildResponse({ error: "Parameter acara wajib disertakan." }, 400);
+				return buildResponse({ error: "Parameter acara wajib disertakan." }, 400, CORS_HEADERS);
 			}
 			
 			const acaraDetails = await db.getAcara(env.DB_PRESENSI, idAcara);
 			if (!acaraDetails) {
-				return buildResponse({ error: "Acara tidak ditemukan." }, 404);
+				return buildResponse({ error: "Acara tidak ditemukan." }, 404, CORS_HEADERS);
 			}
 			
 			const dataUndangan = await db.getDataUndangan(env.DB_PRESENSI, idAcara);
 			// SERTAKAN CORS HEADER PADA RESPON SUKSES
-			return buildResponse(dataUndangan);
+			return buildResponse(dataUndangan, CORS_HEADERS);
 		}
 		
 		// Jalur utk menampilkan master data subgroup
@@ -397,9 +393,9 @@ export default {
 			
 			try {
 				const uniqueSubgroups = await db.getAllSubgroups(env.DB_PRESENSI);
-				return buildResponse({ results: uniqueSubgroups });
+				return buildResponse({ results: uniqueSubgroups }, 200, CORS_HEADERS);
 			} catch (e) {
-				return buildResponse({ error: "Gagal mengambil daftar semua subgroup." }, 500);
+				return buildResponse({ error: "Gagal mengambil daftar semua subgroup." }, 500, CORS_HEADERS);
 			}
 		}
 		
@@ -408,7 +404,7 @@ export default {
 			// Parameter 'acara' sudah diambil di awal fungsi fetch: const idAcara = url.searchParams.get('acara');
 	
 			if (!idAcara) {
-				return buildResponse({ error: "Parameter 'acara' wajib ada." }, 400);
+				return buildResponse({ error: "Parameter 'acara' wajib ada." }, 400, CORS_HEADERS);
 			}
 	
 			try {
@@ -419,18 +415,18 @@ export default {
 				]);
 		
 				if (!acaraDetails) {
-					return buildResponse({ error: `Acara dengan ID ${idAcara} tidak ditemukan.` }, 404);
+					return buildResponse({ error: `Acara dengan ID ${idAcara} tidak ditemukan.` }, 404, CORS_HEADERS);
 				}
 		
 				// Kembalikan detail acara dan statistik awal (termasuk list subGroup)
 				return buildResponse({
 					acara: acaraDetails,
 					data: initialStats
-				});
+				}, 200, CORS_HEADERS);
 		
 			} catch (e) {
 				console.error("Error fetching initial data for form:", e);
-				return buildResponse({ error: "Gagal mengambil data awal untuk form." }, 500);
+				return buildResponse({ error: "Gagal mengambil data awal untuk form." }, 500, CORS_HEADERS);
 			}
 		}
 		
@@ -440,7 +436,7 @@ export default {
 			const idAcaraPost = data.idAcara;
 			
 			if (!idAcaraPost) {
-				return buildResponse({ error: "ID Acara wajib ada." }, 400);
+				return buildResponse({ error: "ID Acara wajib ada." }, 400, CORS_HEADERS);
 			}
 			
 			try {
@@ -470,11 +466,11 @@ export default {
 					nama_acara: newPresensiEntry.nama_acara,
 					nama: newPresensiEntry.nama,
 					nama_subgroup: newPresensiEntry.nama_subgroup
-				});
+				}, 200, CORS_HEADERS);
 			} catch (e) {
 				console.error("Error saat memproses input presensi:", e);
 				// Mengembalikan 500 dengan CORS Header yang benar
-				return buildResponse({ error: "Kesalahan internal server saat menyimpan data." }, 500);
+				return buildResponse({ error: "Kesalahan internal server saat menyimpan data." }, 500, CORS_HEADERS);
 			}
 		}
 		
@@ -506,10 +502,10 @@ export default {
 					}
 				}
 				
-				return buildResponse({ message: "Acara berhasil ditambahkan dan pembaruan realtime dikirim.", acara: newAcaraEntry }, 201);
+				return buildResponse({ message: "Acara berhasil ditambahkan dan pembaruan realtime dikirim.", acara: newAcaraEntry }, 201, CORS_HEADERS);
 			} catch (e) {
 				console.error("Error saat memproses input acara:", e);
-				return buildResponse({ error: "Gagal menyimpan acara. Kesalahan internal server." }, 500);
+				return buildResponse({ error: "Gagal menyimpan acara. Kesalahan internal server." }, 500, CORS_HEADERS);
 			}
 			
 		}
@@ -524,7 +520,7 @@ export default {
 			
 			const { namaSubGroup, namaGroup } = await request.json();
 			if (!namaSubGroup || !namaGroup) {
-				return buildResponse({ error: "Nama Subgroup dan Nama Group wajib diisi." }, 400);
+				return buildResponse({ error: "Nama Subgroup dan Nama Group wajib diisi." }, 400, CORS_HEADERS);
 			}
 			
 			try {
@@ -584,10 +580,10 @@ export default {
 					idSubGroup: subGroupEntry.id_subgroup,
 					namaSubGroup: namaSubGroup,
 					namaGroup: groupEntry.nama_group
-				}, 201);
+				}, 201, CORS_HEADERS);
 			} catch (e) {
 				console.error("Error saat memproses input subgroup/group:", e);
-				return buildResponse({ error: "Gagal menyimpan subgroup/group. Kesalahan internal server." }, 500);
+				return buildResponse({ error: "Gagal menyimpan subgroup/group. Kesalahan internal server." }, 500, CORS_HEADERS);
 			}
 		}
 		
@@ -603,7 +599,7 @@ export default {
 			const idAcaraPost = data.idAcara;
 			
 			if (!idAcaraPost) {
-				return buildResponse({ error: "ID Acara wajib ada." }, 400);
+				return buildResponse({ error: "ID Acara wajib ada." }, 400, CORS_HEADERS);
 			}
 			
 			try {
@@ -626,10 +622,10 @@ export default {
 					}
 				}
 				
-				return buildResponse({ message: "Undangan berhasil ditambahkan dan pembaruan realtime dikirim.", undangan: newUndanganEntry }, 201);
+				return buildResponse({ message: "Undangan berhasil ditambahkan dan pembaruan realtime dikirim.", undangan: newUndanganEntry }, 201, CORS_HEADERS);
 			} catch (e) {
 				console.error("Error saat memproses input undangan:", e);
-				return buildResponse({ error: "Gagal menyimpan undangan. Kesalahan internal server." }, 500);
+				return buildResponse({ error: "Gagal menyimpan undangan. Kesalahan internal server." }, 500, CORS_HEADERS);
 			}
 		}
 		
