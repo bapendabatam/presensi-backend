@@ -107,7 +107,7 @@ export default {
 		// === MIDDLEWARE AUTHENTICATION DAN REDIRECT ===
 		const currentPathname = url.pathname;
 		const LOGIN_PAGE = '/admin/login';
-		const isApiRequest = currentPathname.startsWith('/');
+		const isApiRequest = currentPathname.startsWith('/api');
 		
 		if (!isApiRequest && isRequestingAdminPage(currentPathname)) {
 			// Coba otentikasi tanpa mengembalikan 401 response, hanya mendapatkan payload/null
@@ -137,7 +137,7 @@ export default {
 				console.log(`REDIRECT: User tidak terotentikasi di ${currentPathname}. Redirect ke login.`);
 				
 				// Tangkap URL lengkap yg diminta pengguna (termasuk query params seperti ?acara=1)
-				const originPath = url.pathname + url.search;
+				const originPath = 'biangkerok';//url.pathname + url.search;
 				
 				// Buat URL redirect: /login/?redirect=/data-presensi/?acara=1
 				const finalRedirect = LOGIN_PAGE + `?redirect=${encodeURIComponent(originPath)}`;
