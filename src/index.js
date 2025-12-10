@@ -17,10 +17,10 @@ function buildResponse(data, status = 200, corsHeaders, extraHeaders = {}, conte
 }
 
 const ADMIN_PAGES = [
+	'/admin/index',
 	'/admin/data-presensi',
 	'/admin/data-undangan',
 	'/admin/kelola-acara',
-	'/admin/dashboard',
 ];
 
 function isRequestingAdminPage(pathname) {
