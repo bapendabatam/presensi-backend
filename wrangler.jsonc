@@ -16,6 +16,10 @@
 			}
 		]
 	},
+	"vars": {
+		"IS_LOCAL_DEV": "false",
+		"ORIGIN_FRONTEND_PROD": "presensi-acara-bapendabatam.pages.dev"
+	},
 	"migrations": [
 		{
 			"new_sqlite_classes": [
