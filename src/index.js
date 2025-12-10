@@ -142,6 +142,9 @@ export default {
 				// Buat URL redirect: /login/?redirect=/data-presensi/?acara=1
 				const finalRedirect = LOGIN_PAGE + `?redirect=${encodeURIComponent(originPath)}`;
 				
+				console.log(`[DIAGNOSTIK] ORIGIN_FRONTEND yang dibaca: ${ORIGIN_FRONTEND}`);
+				console.log(`[DIAGNOSTIK] Path Redirect (finalRedirect): ${finalRedirect}`);
+				
 				const redirectURL = ORIGIN_FRONTEND + finalRedirect;
 				
 				console.log(`[WORKER DEBUG] Redirecting to: ${redirectURL}`);
