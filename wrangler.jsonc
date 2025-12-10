@@ -18,7 +18,7 @@
 	},
 	"vars": {
 		"IS_LOCAL_DEV": "false",
-		"ORIGIN_FRONTEND_PROD": "presensi-acara-bapendabatam.pages.dev"
+		"ORIGIN_FRONTEND_PROD": "https://presensi-acara-bapendabatam.pages.dev"
 	},
 	"migrations": [
 		{
