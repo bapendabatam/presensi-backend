@@ -80,6 +80,25 @@ export default {
 			return payload; // Mengembalikan payload jika sukses
 		}
 
+		// --- Cek Origin (Origin Hardening) ---
+		const requestOrigin = request.headers.get('Origin');
+		
+		// Cek 1: Jika header Origin ada DAN tidak sama dengan ORIGIN_FRONTEND yang diizinkan
+		if (requestOrigin && requestOrigin !== ORIGIN_FRONTEND) {
+			// Tolak akses!
+			// Mengembalikan 403.
+			return new Response("Forbidden: Cross-Origin Request Not Allowed", { 
+				status: 403,
+				// Meskipun menolak, tetap bisa menambahkan CORS_HEADERS 
+				// untuk membantu debugging browser.
+				headers: {
+					...CORS_HEADERS,
+					'Content-Type': 'text/plain'
+				}
+			});
+		}
+		// --- End Cek Origin ---
+
 		// === WAJIB: TANGANI PERMINTAAN OPTIONS (PREFLIGHT) ===
 		if (request.method === 'OPTIONS') {
 			return new Response(null, {
@@ -135,6 +154,8 @@ export default {
 			}
 		}
 		// === END MIDDLEWARE ===
+		
+		
 		
 		// === ENDPOINT VERIFY SESSION ===
 		if (url.pathname === "/api/auth/verify-session" && request.method === 'GET') {
@@ -216,7 +237,7 @@ export default {
 				const MAX_AGE_SECONDS = 60 * 60 * 12;
 				
 				// Tentukan Nilai Cookie: HttpOnly dan Secure wajib!
-				const cookieValue = `admin_token=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${MAX_AGE_SECONDS}`;
+				const cookieValue = `admin_token=${token}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${MAX_AGE_SECONDS}`;
 				
 				// Tentukan path setelah login (default belum dibuat)
 				const successPath = redirect || '/admin/dashboard'; 
@@ -246,7 +267,7 @@ export default {
 		else if (url.pathname === "/api/auth/logout" && request.method === "POST") {
 			try {
 				// Untuk menghapus cookie admin_token (HttpOnly), kita set cookie baru dengan Max-Age=0
-				const expiredCookieValue = 'admin_token=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
+				const expiredCookieValue = 'admin_token=; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT';
 				
 				const headers = {
 					'Content-Type': 'application/json',

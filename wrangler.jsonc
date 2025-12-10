@@ -8,6 +8,26 @@
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
+	"env": {
+		"production": {
+			// WAJIB: Duplikasi binding D1 dan DO untuk lingkungan production
+			"durable_objects": {
+				"bindings": [
+					{
+						"class_name": "Presensi",
+						"name": "PRESENSI"
+					}
+				]
+			},
+			"d1_databases": [
+				{
+					"binding": "DB_PRESENSI",
+					"database_name": "db_presensi",
+					"database_id": "58524262-8b25-4e32-b0ce-b2c2ed720939"
+				}
+			]
+		}
+	},
 	"durable_objects": {
 		"bindings": [
 			{
