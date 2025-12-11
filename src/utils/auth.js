@@ -85,13 +85,8 @@ export async function verifyPassword(storedHashStr, inputPassword) {
 	return crypto.subtle.timingSafeEqual(originalHash, derivedHash);
 }
 
-/**
- * Verifikasi token JWT.
- * @param {string} token - Token JWT.
- * @param {string} secret - Kunci rahasia JWT.
- * @returns {Promise<object|false>} Payload token jika valid, atau false jika tidak valid.
- */
- export async function verifyToken(token, secret) {
+// Verifikasi token JWT.
+export async function verifyToken(token, secret) {
 	if (!token) return false;
 	
 	const parts = token.split('.');
@@ -128,7 +123,7 @@ export async function verifyPassword(storedHashStr, inputPassword) {
 		console.error("Token verification error:", e);
 		return false;
 	}
- }
+}
 
 // JSON Web Token (JWT) sederhana
 // Fungsi utk membuat token sesi

@@ -17,6 +17,7 @@ function buildResponse(data, status = 200, corsHeaders, extraHeaders = {}, conte
 }
 
 const ADMIN_PAGES = [
+	'/admin/index',
 	'/admin/data-presensi',
 	'/admin/data-undangan',
 	'/admin/kelola-acara',
@@ -106,7 +107,7 @@ export default {
 		// === MIDDLEWARE AUTHENTICATION DAN REDIRECT ===
 		const currentPathname = url.pathname;
 		const LOGIN_PAGE = '/admin/login';
-		const isApiRequest = currentPathname.startsWith('/');
+		const isApiRequest = currentPathname.startsWith('/api');
 		
 		if (!isApiRequest && isRequestingAdminPage(currentPathname)) {
 			// Coba otentikasi tanpa mengembalikan 401 response, hanya mendapatkan payload/null
