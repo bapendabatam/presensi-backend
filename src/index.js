@@ -20,7 +20,6 @@ const ADMIN_PAGES = [
 	'/admin/data-presensi',
 	'/admin/data-undangan',
 	'/admin/kelola-acara',
-	'/admin/dashboard',
 ];
 
 function isRequestingAdminPage(pathname) {
