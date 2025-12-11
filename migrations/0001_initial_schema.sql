@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS tb_presensi (
 	nama TEXT NOT NULL CHECK(LENGTH(nama) <= 100),
 	id_subgroup INTEGER NOT NULL,
 	jabatan TEXT NOT NULL CHECK(LENGTH(jabatan) <= 100),
+	gender TEXT NOT NULL CHECK(LENGTH(gender) <= 1),
 	no_hp TEXT NOT NULL CHECK(LENGTH(no_hp) <= 20),
 	latitude REAL NOT NULL,
 	longitude REAL NOT NULL,
