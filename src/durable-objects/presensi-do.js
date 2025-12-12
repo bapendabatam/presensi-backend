@@ -9,7 +9,7 @@ export class Presensi {
 		
 		// --- STATE CACHE ---
 		this.sessions = [];
-		this.idAcara = null;
+		this.idAcara = state.id.name;
 		this.acaraDetails = null;
 		
 		// Cache Statistik (diupdate secara realtime di memori)
@@ -50,7 +50,7 @@ export class Presensi {
 			};
 			
 			this.isInitialized = true;
-			console.log(`DO Initialized for Acara ID: ${this.idAcara}`);
+			console.log(`DO is Initialized for Acara ID: ${this.idAcara}`);
 		} catch (e) {
 			console.error("Failed to initialize DO data:", e);
 		}
@@ -71,8 +71,6 @@ export class Presensi {
 					// Ini akan mem-block concurrency sampai data siap
 					await this.state.blockConcurrencyWhile(async () => {
 						if (!this.isInitialized) {
-							// Ambil ID Acara dari NewEntry jika this.idAcara masih null
-							this.idAcara = this.idAcara || newPresensiEntry.idAcara; 
 							await this.initializeData();
 						}
 					});
@@ -140,15 +138,13 @@ export class Presensi {
 		}
 		
 		// Inisiasi ID Acara DO (Binding)
-		if (this.idAcara === null) {
-			this.idAcara = currentIdAcara;
-			// Pastikan data ter-load sebelum memproses request apapun
-			// blockConcurrencyWhile menahan request lain sampai promise selesai
-			this.state.blockConcurrencyWhile(async () => {
-				await this.initializeData();
-			});
-		} else if (this.idAcara !== currentIdAcara) {
-			return new Response("DO bound to different event ID.", { status: 409 });
+		if (this.idAcara !== currentIdAcara) {
+			// Hanya perlu membandingkan ID yang digunakan DO vs ID yang diminta client.
+			// Jika beda, tolak.
+			if (currentIdAcara !== null) { 
+				// Jangan tolak jika currentIdAcara null, karena itu sudah ditolak di atas
+				return new Response("DO bound to different event ID.", { status: 409 });
+			}
 		}
 		
 		// Jalur WebSocket
