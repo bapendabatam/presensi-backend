@@ -20,22 +20,6 @@ CREATE TABLE IF NOT EXISTS tb_admin (
 	status_admin TEXT NOT NULL CHECK(status_admin IN ('aktif', 'nonaktif'))
 );
 
-CREATE TABLE IF NOT EXISTS tb_presensi (
-	id_presensi INTEGER PRIMARY KEY AUTOINCREMENT,
-	id_acara INTEGER NOT NULL,
-	waktu DATETIME DEFAULT CURRENT_TIMESTAMP,
-	nama TEXT NOT NULL CHECK(LENGTH(nama) <= 100),
-	id_subgroup INTEGER NOT NULL,
-	jabatan TEXT NOT NULL CHECK(LENGTH(jabatan) <= 100),
-	gender TEXT NOT NULL CHECK(LENGTH(gender) <= 1),
-	no_hp TEXT NOT NULL CHECK(LENGTH(no_hp) <= 20),
-	latitude REAL NOT NULL,
-	longitude REAL NOT NULL,
-	id_device TEXT NOT NULL CHECK(LENGTH(id_device) <= 100),
-	FOREIGN KEY (id_acara) REFERENCES tb_acara(id_acara) ON UPDATE CASCADE,
-	FOREIGN KEY (id_subgroup) REFERENCES tb_subgroup(id_subgroup) ON UPDATE CASCADE
-);
-
 CREATE TABLE IF NOT EXISTS tb_group (
 	id_group INTEGER PRIMARY KEY AUTOINCREMENT,
 	nama_group TEXT NOT NULL CHECK(LENGTH(nama_group) <= 100)
@@ -55,4 +39,34 @@ CREATE TABLE IF NOT EXISTS tb_undangan (
 	UNIQUE (id_acara, id_subgroup),
 	FOREIGN KEY (id_acara) REFERENCES tb_acara(id_acara) ON UPDATE CASCADE,
 	FOREIGN KEY (id_subgroup) REFERENCES tb_subgroup(id_subgroup) ON UPDATE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS tb_gender (
+	id_gender INTEGER PRIMARY KEY AUTOINCREMENT,
+	gender TEXT NOT NULL CHECK(LENGTH(gender) <= 22)
+);
+
+CREATE TABLE IF NOT EXISTS tb_jenis_kepegawaian (
+	id_jenis_kepegawaian INTEGER PRIMARY KEY AUTOINCREMENT,
+	jenis_kepegawaian TEXT NOT NULL CHECK(LENGTH(jenis_kepegawaian) <= 50)
+);
+
+CREATE TABLE IF NOT EXISTS tb_presensi_new (
+	id_presensi INTEGER PRIMARY KEY AUTOINCREMENT,
+	id_acara INTEGER NOT NULL,
+	waktu DATETIME DEFAULT CURRENT_TIMESTAMP,
+	nama TEXT NOT NULL CHECK(LENGTH(nama) <= 100),
+	id_subgroup INTEGER NOT NULL,
+	jabatan TEXT NOT NULL CHECK(LENGTH(jabatan) <= 100),
+	id_jenis_kepegawaian INTEGER NOT NULL,
+	id_gender INTEGER NOT NULL,
+	no_hp TEXT NOT NULL CHECK(LENGTH(no_hp) <= 20),
+	email TEXT NOT NULL CHECK(LENGTH(email) <= 100),
+	latitude REAL NOT NULL,
+	longitude REAL NOT NULL,
+	id_device TEXT NOT NULL CHECK(LENGTH(id_device) <= 100),
+	FOREIGN KEY (id_acara) REFERENCES tb_acara(id_acara) ON UPDATE CASCADE,
+	FOREIGN KEY (id_subgroup) REFERENCES tb_subgroup(id_subgroup) ON UPDATE CASCADE,
+	FOREIGN KEY (id_jenis_kepegawaian) REFERENCES tb_jenis_kepegawaian(id_jenis_kepegawaian) ON UPDATE CASCADE,
+	FOREIGN KEY (id_gender) REFERENCES tb_gender(id_gender) ON UPDATE CASCADE
 );
