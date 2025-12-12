@@ -56,3 +56,13 @@ DROP TABLE tb_presensi;
 
 5. Ganti nama tabel baru
 ALTER TABLE tb_presensi_new RENAME TO tb_presensi;
+
+
+# REMOTE UPDATE DB example:
+npx wrangler d1 execute db_presensi --file=./nogit-temp.sql --remote
+
+npx wrangler d1 execute db_presensi --command="INSERT INTO tb_gender (gender) VALUES ('Laki-laki'), ('Perempuan')" --remote
+
+npx wrangler d1 execute db_presensi --command="INSERT INTO tb_jenis_kepegawaian (jenis_kepegawaian) VALUES ('PNS'), ('PPPK'), ('Non-ASN')" --remote
+
+
