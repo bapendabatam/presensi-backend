@@ -12,9 +12,16 @@ export async function getDataPresensi(db, idAcara) {
 	const { results } = await db.prepare(
 		`SELECT 
 			tb_presensi.*, 
-			tb_subgroup.nama_subgroup 
+			tb_subgroup.nama_subgroup,
+			tb_gender.gender,
+			tb_jenis_kepegawaian.jenis_kepegawaian
 		FROM tb_presensi 
-		JOIN tb_subgroup ON tb_presensi.id_subgroup = tb_subgroup.id_subgroup 
+		JOIN tb_subgroup 
+			ON tb_presensi.id_subgroup = tb_subgroup.id_subgroup
+		JOIN tb_jenis_kepegawaian 
+			ON tb_presensi.id_jenis_kepegawaian = tb_jenis_kepegawaian.id_jenis_kepegawaian
+		JOIN tb_gender 
+			ON tb_presensi.id_gender = tb_gender.id_gender
 		WHERE tb_presensi.id_acara = ?
 		ORDER BY tb_presensi.waktu ASC`
 	).bind(parseInt(idAcara)).all();
@@ -65,18 +72,24 @@ export async function insertPresensi(db, data) {
 			nama,
 			id_subgroup,
 			jabatan,
+			id_jenis_kepegawaian,
+			id_gender,
 			no_hp,
+			email,
 			latitude,
 			longitude,
 			id_device
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	).bind(
 		parseInt(data.idAcara),
 		waktu_input,
 		data.nama,
 		parseInt(data.idSubGroup),
 		data.jabatan,
+		data.idJenisKepegawaian,
+		data.idGender,
 		data.noHp,
+		data.email,
 		data.latitude,
 		data.longitude,
 		data.idDevice
@@ -93,10 +106,18 @@ export async function insertPresensi(db, data) {
 		`SELECT 
 			tb_presensi.*, 
 			tb_subgroup.nama_subgroup,
-			tb_acara.nama_acara
+			tb_acara.nama_acara,
+			tb_gender.gender,
+			tb_jenis_kepegawaian.jenis_kepegawaian
 		FROM tb_presensi
-		JOIN tb_subgroup ON tb_presensi.id_subgroup = tb_subgroup.id_subgroup
-		JOIN tb_acara ON tb_presensi.id_acara = tb_acara.id_acara
+		JOIN tb_subgroup 
+			ON tb_presensi.id_subgroup = tb_subgroup.id_subgroup
+		JOIN tb_acara 
+			ON tb_presensi.id_acara = tb_acara.id_acara
+		JOIN tb_jenis_kepegawaian 
+			ON tb_presensi.id_jenis_kepegawaian = tb_jenis_kepegawaian.id_jenis_kepegawaian
+		JOIN tb_gender 
+			ON tb_presensi.id_gender = tb_gender.id_gender
 		WHERE tb_presensi.ROWID = ?`
 	).bind(newRowId).all();
 	
@@ -232,7 +253,7 @@ export async function insertAcara(db, data) {
 export async function getStatistik(db, idAcara) {
 	const id = parseInt(idAcara);
 	 
-	const [undanganResult, countResult, hadirResult] = await Promise.all([
+	const [undanganResult, countResult, hadirResult, genderResult, jenisKepegawaianResult] = await Promise.all([
 		// Ambil data undangan (total subGroup)
 		db.prepare(`
 			SELECT DISTINCT tb_subgroup.id_subgroup, tb_subgroup.nama_subgroup, tb_subgroup.id_group, tb_group.nama_group
@@ -253,12 +274,20 @@ export async function getStatistik(db, idAcara) {
 			FROM tb_presensi
 			JOIN tb_subgroup ON tb_presensi.id_subgroup = tb_subgroup.id_subgroup
 			WHERE tb_presensi.id_acara = ?
-		`).bind(id).all()
+		`).bind(id).all(),
+		
+		// Ambil semua gender
+		db.prepare(`SELECT * FROM tb_gender`).all(),
+		
+		// Ambil semua jenis kepegawaian
+		db.prepare(`SELECT * FROM tb_jenis_kepegawaian`).all()
 	]);
 	
 	const undanganDetails = undanganResult.results || [];
 	const jmlPesertaHadir = countResult.results[0]?.jmlPesertaHadir || 0;
 	const subGroupHadirRows = hadirResult.results || [];
+	const allGender = genderResult.results || [];
+	const allJenisKepegawaian = jenisKepegawaianResult.results || [];
 	
 	// Lanjutkan pengolahan di JS
 	const subGroupHadirNames = subGroupHadirRows.map(row => row.nama_subgroup);
@@ -274,7 +303,9 @@ export async function getStatistik(db, idAcara) {
 		jmlSubGroupHadir: subGroupHadirNames.length,
 		subGroupHadir: subGroupHadirNames,
 		subGroup: undanganDetails,
-		subGroupBelumHadir: subGroupBelumHadirDetails
+		subGroupBelumHadir: subGroupBelumHadirDetails,
+		gender: allGender,
+		jenisKepegawaian: allJenisKepegawaian
 	};
 }
  
