@@ -9,7 +9,7 @@ export class Presensi {
 		
 		// --- STATE CACHE ---
 		this.sessions = [];
-		this.idAcara = state.id.name;
+		this.idAcara = null;
 		this.acaraDetails = null;
 		
 		// Cache Statistik (diupdate secara realtime di memori)
@@ -50,7 +50,7 @@ export class Presensi {
 			};
 			
 			this.isInitialized = true;
-			console.log(`DO is Initialized for Acara ID: ${this.idAcara}`);
+			console.log(`DO Initialized for Acara ID: ${this.idAcara}`);
 		} catch (e) {
 			console.error("Failed to initialize DO data:", e);
 		}
@@ -66,11 +66,14 @@ export class Presensi {
 				console.log("DO LOG: Sinyal POST diterima. ENTRY BERHASIL DIPROSES!");
 				
 				// Logika penting: Pastikan data sudah diinisiasi sebelum update
+				console.log('[DEBUG DO] 69 isInitialized = ' + this.isInitialized);
 				if (!this.isInitialized) {
 					// Jika data belum sempat diinisiasi, panggil ulang (ini terjadi jika sinyal datang sebelum WS)
 					// Ini akan mem-block concurrency sampai data siap
 					await this.state.blockConcurrencyWhile(async () => {
 						if (!this.isInitialized) {
+							// Ambil ID Acara dari NewEntry jika this.idAcara masih null
+							this.idAcara = this.idAcara || newPresensiEntry.id_acara;
 							await this.initializeData();
 						}
 					});
@@ -138,13 +141,15 @@ export class Presensi {
 		}
 		
 		// Inisiasi ID Acara DO (Binding)
-		if (this.idAcara !== currentIdAcara) {
-			// Hanya perlu membandingkan ID yang digunakan DO vs ID yang diminta client.
-			// Jika beda, tolak.
-			if (currentIdAcara !== null) { 
-				// Jangan tolak jika currentIdAcara null, karena itu sudah ditolak di atas
-				return new Response("DO bound to different event ID.", { status: 409 });
-			}
+		if (this.idAcara === null) {
+			this.idAcara = currentIdAcara;
+			// Pastikan data ter-load sebelum memproses request apapun
+			// blockConcurrencyWhile menahan request lain sampai promise selesai
+			await this.state.blockConcurrencyWhile(async () => {
+				await this.initializeData();
+			});
+		} else if (this.idAcara !== currentIdAcara) {
+			return new Response("DO bound to different event ID.", { status: 409 });
 		}
 		
 		// Jalur WebSocket
@@ -177,7 +182,9 @@ export class Presensi {
 	// Mengelola sesi WebSocket baru: validasi acara, inisiasi, penanganan event
 	async handleSession(webSocket, adminPayload) {
 		// Double check initialization
-		if (!this.isInitialized) await this.initializeData();
+		if (!this.isInitialized) {
+			await this.initializeData();
+		}
 		
 		webSocket.accept();
 		
